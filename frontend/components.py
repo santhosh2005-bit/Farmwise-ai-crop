@@ -417,97 +417,22 @@ def render_landing_page(info: dict[str, Any], on_launch_chat) -> None:
     st.dataframe(info.get("sample_rows", []), use_container_width=True)
 
 
-def generate_docx(chat_history: list[dict]) -> bytes:
-    import io
-    from docx import Document
-    from docx.shared import Pt
-    from docx.dml.color import RGBColor
-
-    doc = Document()
-    doc.add_heading("FarmWise AI Copilot Conversation Transcript", level=0)
-
+def generate_markdown_transcript(chat_history: list[dict]) -> str:
+    lines = ["# FarmWise AI Copilot Conversation Transcript\n"]
     for msg in chat_history:
         role_label = "User" if msg["role"] == "user" else "Copilot"
-        h = doc.add_heading(role_label, level=2)
-        if msg["role"] == "user":
-            h.runs[0].font.color.rgb = RGBColor(59, 130, 246)  # Blue
-        else:
-            h.runs[0].font.color.rgb = RGBColor(16, 185, 129)  # Green
-
+        lines.append(f"## 👤 {role_label}")
         if msg.get("content"):
-            doc.add_paragraph(msg["content"])
+            lines.append(msg["content"])
             
         if msg.get("insights"):
             ins = msg["insights"]
-            doc.add_paragraph("Automatic Data Insights:")
-            doc.add_paragraph(f"• Rows Analyzed: {ins.get('row_count')}", style='List Bullet')
-            doc.add_paragraph(f"• Trend: {ins.get('trend')}", style='List Bullet')
-            doc.add_paragraph(f"• Average: {ins.get('average')}", style='List Bullet')
-
-    bio = io.BytesIO()
-    doc.save(bio)
-    return bio.getvalue()
-
-
-def generate_pdf(chat_history: list[dict]) -> bytes:
-    import io
-    from fpdf import FPDF
-
-    class PDF(FPDF):
-        def header(self):
-            self.set_font('helvetica', 'B', 14)
-            self.set_text_color(16, 185, 129) # Green title
-            self.cell(0, 10, 'FarmWise AI Copilot', border=False, new_x="LMARGIN", new_y="NEXT", align='C')
-            self.ln(5)
-
-        def footer(self):
-            self.set_y(-15)
-            self.set_font('helvetica', 'I', 8)
-            self.set_text_color(128, 128, 128)
-            self.cell(0, 10, f'Page {self.page_no()}/{{nb}}', align='C')
-
-    pdf = PDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
-    pdf.set_font("helvetica", size=10)
-
-    pdf.set_font('helvetica', 'B', 14)
-    pdf.set_text_color(15, 23, 42)
-    pdf.cell(0, 10, 'Conversation Transcript', new_x="LMARGIN", new_y="NEXT", align='L')
-    pdf.ln(5)
-
-    for msg in chat_history:
-        role_label = "User" if msg["role"] == "user" else "Copilot"
-        pdf.set_font('helvetica', 'B', 11)
-        if msg["role"] == "user":
-            pdf.set_text_color(59, 130, 246) # Blue
-        else:
-            pdf.set_text_color(16, 185, 129) # Green
-        pdf.cell(0, 8, f'{role_label}:', new_x="LMARGIN", new_y="NEXT")
-        
-        pdf.set_font('helvetica', '', 10)
-        pdf.set_text_color(51, 65, 85)
-        
-        content = msg.get("content", "")
-        # Simple cleanup of markdown symbols for standard PDF fonts
-        content = content.replace("**", "").replace("*", "-").replace("`", "")
-        content_encoded = content.encode('latin-1', 'replace').decode('latin-1')
-        pdf.multi_cell(0, 6, content_encoded)
-        pdf.ln(4)
-
-        if msg.get("insights"):
-            ins = msg["insights"]
-            pdf.set_font('helvetica', 'B', 10)
-            pdf.set_text_color(15, 23, 42)
-            pdf.cell(0, 6, "Automatic Data Insights:", new_x="LMARGIN", new_y="NEXT")
-            pdf.set_font('helvetica', '', 10)
-            pdf.set_text_color(51, 65, 85)
-            pdf.cell(0, 5, f"- Rows Analyzed: {ins.get('row_count')}", new_x="LMARGIN", new_y="NEXT")
-            pdf.cell(0, 5, f"- Trend: {ins.get('trend')}", new_x="LMARGIN", new_y="NEXT")
-            pdf.cell(0, 5, f"- Average: {ins.get('average')}", new_x="LMARGIN", new_y="NEXT")
-            pdf.ln(4)
-
-    return bytes(pdf.output())
+            lines.append("\n**Automatic Data Insights:**")
+            lines.append(f"- Rows Analyzed: {ins.get('row_count')}")
+            lines.append(f"- Trend: {ins.get('trend')}")
+            lines.append(f"- Average: {ins.get('average')}")
+        lines.append("\n---\n")
+    return "\n".join(lines)
 
 
 def render_export_buttons(chat_history: list[dict], last_data: list[dict] | None) -> None:
@@ -522,33 +447,19 @@ def render_export_buttons(chat_history: list[dict], last_data: list[dict] | None
     """
     st.sidebar.subheader("📥 Export & Report Options")
 
-    # 1. Export Chat Transcript (Word & PDF)
+    # 1. Export Chat Transcript (Markdown)
     if chat_history:
-        # Export as Word (.docx)
         try:
-            docx_data = generate_docx(chat_history)
+            md_data = generate_markdown_transcript(chat_history)
             st.sidebar.download_button(
-                label="📝 Download Chat Log (.docx)",
-                data=docx_data,
-                file_name="farmwise_chat_transcript.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                label="📝 Download Chat Log (.md)",
+                data=md_data,
+                file_name="farmwise_chat_transcript.md",
+                mime="text/markdown",
                 use_container_width=True
             )
         except Exception as e:
-            st.sidebar.warning(f"Could not generate Word document: {e}")
-
-        # Export as PDF (.pdf)
-        try:
-            pdf_data = generate_pdf(chat_history)
-            st.sidebar.download_button(
-                label="📕 Download Chat Log (.pdf)",
-                data=pdf_data,
-                file_name="farmwise_chat_transcript.pdf",
-                mime="application/pdf",
-                use_container_width=True
-            )
-        except Exception as e:
-            st.sidebar.warning(f"Could not generate PDF: {e}")
+            st.sidebar.warning(f"Could not generate transcript: {e}")
 
     # 2. Export Last Query Data
     if last_data:
