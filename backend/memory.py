@@ -58,7 +58,7 @@ class ConversationMemory:
     """
 
     messages: list[Message] = field(default_factory=list)
-    max_turns: int = 1
+    max_turns: int = 10
 
     # ── Public API ───────────────────────────────────────────
 

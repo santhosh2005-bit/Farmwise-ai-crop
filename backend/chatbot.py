@@ -18,6 +18,7 @@ import logging
 import re
 from typing import Any
 
+import pandas as pd
 from groq import AsyncGroq
 
 from backend import config, dataset
@@ -111,6 +112,44 @@ class Chatbot:
             year_range=(int(df["Year"].min()), int(df["Year"].max())),
         )
 
+    def _get_safe_messages(self, all_msgs: list[dict[str, Any]], target_count: int = 8) -> list[dict[str, Any]]:
+        """Slice the messages list safely so we never orphan a tool message.
+
+        Always preserves the system prompt (at index 0) and keeps a slice of the
+        remaining messages starting at a 'user' message boundary.
+        """
+        if len(all_msgs) <= 1:
+            return all_msgs
+
+        system_msg = all_msgs[0]
+        non_system = all_msgs[1:]
+
+        # If the non-system list is already within target_count, keep it all
+        if len(non_system) <= target_count:
+            return all_msgs
+
+        # Find all indices in non_system where the role is 'user'
+        user_indices = [i for i, msg in enumerate(non_system) if msg.get("role") == "user"]
+
+        if not user_indices:
+            # Fallback to simple slicing if no user message is found
+            return [system_msg] + non_system[-target_count:]
+
+        # Find the oldest 'user' message index that doesn't exceed target_count,
+        # or at least keeps the slice size under target_count as much as possible.
+        start_idx = user_indices[0]
+        for idx in user_indices:
+            remaining = len(non_system) - idx
+            if remaining <= target_count:
+                start_idx = idx
+                break
+        else:
+            # If all user messages lead to remaining counts > target_count,
+            # use the last user message to avoid orphaning tool calls in the active turn.
+            start_idx = user_indices[-1]
+
+        return [system_msg] + non_system[start_idx:]
+
     # ── Internal: Groq tool-calling loop ─────────────────────
 
     async def _run_tool_loop(self) -> dict[str, Any]:
@@ -131,7 +170,7 @@ class Chatbot:
             iterations += 1
             # Only send the system prompt + the last 8 conversation turns to stay under token limits
             all_msgs = self.memory.get_messages()
-            messages = [all_msgs[0]] + all_msgs[-8:] if len(all_msgs) > 9 else all_msgs
+            messages = self._get_safe_messages(all_msgs, target_count=8)
 
             try:
                 response = await self.client.chat.completions.create(
@@ -534,7 +573,6 @@ class Chatbot:
             # If the LLM is discussing a time trend, aggregate and plot a line chart
             ans_lower = answer_text.lower()
             if "year" in ans_lower or "trend" in ans_lower or "over time" in ans_lower:
-                import pandas as pd
                 df = pd.DataFrame(data)
                 if "Year" in df.columns:
                     # Aggregate by year for a smooth trend line

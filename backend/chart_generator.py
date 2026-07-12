@@ -116,18 +116,21 @@ def create_chart(
         fig.update_layout(title=title or "No Data")
         return fig
 
-    # For bar charts, sort data by y-value descending to show a clear structure (highest to lowest)
-    if chart_type == "bar" and y in df.columns:
-        df = df.sort_values(by=y, ascending=False)
-
-    # For line charts, sort by x ascending and aggregate y to prevent overlapping zig-zag lines
-    if chart_type == "line" and x in df.columns and y in df.columns:
-        df = df.sort_values(by=x, ascending=True)
-        group_cols = [x]
-        if color and color in df.columns:
-            group_cols.append(color)
+    # Aggregate data for line, bar, area, and pie charts when y is numeric to prevent stacking / duplicate row inflation
+    if chart_type in ("line", "bar", "area", "pie") and x in df.columns and y in df.columns:
         if pd.api.types.is_numeric_dtype(df[y]):
+            group_cols = [x]
+            if color and color in df.columns and color != x:
+                group_cols.append(color)
             df = df.groupby(group_cols)[y].mean().reset_index()
+
+    # Sort data: time-series charts sorted by x ascending, other bar charts sorted by y descending
+    if x in df.columns:
+        is_time_col = (str(x).lower() == "year")
+        if is_time_col:
+            df = df.sort_values(by=x, ascending=True)
+        elif chart_type == "bar" and y in df.columns:
+            df = df.sort_values(by=y, ascending=False)
 
     # Build common kwargs
     kwargs: dict[str, Any] = {
