@@ -1,0 +1,30 @@
+# ─── OS / IDE ────────────────────────────────────────────────
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.vscode/
+.idea/
+
+# ─── Secrets ─────────────────────────────────────────────────
+.env
+*.env
+!.env.example
+
+# ─── Data artefacts ──────────────────────────────────────────
+*.log
+*.pkl
+*.parquet
+
+# ─── Packaging ───────────────────────────────────────────────
+dist/
+build/
+*.egg-info/
+
+# ─── Scratch & Debug ──────────────────────────────────────────
+scratch/
+debug*.json
+debug*.txt
+chart_error.txt
+test_chart.py
