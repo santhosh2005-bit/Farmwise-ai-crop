@@ -7,6 +7,17 @@ Run with:
 
 from __future__ import annotations
 
+# ─── Render Root Directory Compatibility Hack ──────────────────
+import os
+import sys
+import types
+
+if "backend" not in sys.modules:
+    _backend_dir = os.path.dirname(os.path.abspath(__file__))
+    _backend_module = types.ModuleType("backend")
+    _backend_module.__path__ = [_backend_dir]
+    sys.modules["backend"] = _backend_module
+
 import logging
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator
