@@ -865,19 +865,10 @@ def render_interactive_analytics(info: dict[str, Any]) -> None:
             f"in **{country}** over the full historical period."
         )
 
-        # Fetch all-crop data for this country using raw filter
+        # Fetch all-crop data for this country using the frontend API client
         try:
-            from frontend.api import _BASE_URL
-            import requests as _req
-            resp = _req.get(
-                f"{_BASE_URL}/analytics/raw-data",
-                params={"country": country, "item": "Wheat"},
-                timeout=10,
-            )
-            # Get full country data via /dataset/info endpoint trick:
-            # We'll filter from the available country data by calling the tool directly.
-            from backend.tools import filter_by_country as _fbc
-            all_crops_df = pd.DataFrame(_fbc(country))
+            from frontend.api import get_country_data
+            all_crops_df = pd.DataFrame(get_country_data(country))
         except Exception:
             all_crops_df = pd.DataFrame()
 

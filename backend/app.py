@@ -221,6 +221,17 @@ async def get_raw_analytics_data(country: str, item: str) -> list[dict[str, Any]
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/analytics/country-data", tags=["analytics"])
+async def get_country_analytics_data(country: str) -> list[dict[str, Any]]:
+    """Retrieve raw historical records for all crops in a country."""
+    from backend.tools import filter_by_country
+
+    try:
+        return filter_by_country(country)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ─── Stand-alone execution ───────────────────────────────────
 
 if __name__ == "__main__":

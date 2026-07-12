@@ -174,3 +174,22 @@ def get_raw_data(country: str, item: str) -> list[dict[str, Any]]:
     resp = requests.get(f"{_BASE_URL}/analytics/raw-data", params=params, timeout=15)
     resp.raise_for_status()
     return resp.json()
+
+
+def get_country_data(country: str) -> list[dict[str, Any]]:
+    """Fetch raw yield and climate data records for all crops in a country.
+
+    Parameters
+    ----------
+    country : str
+        Country name.
+
+    Returns
+    -------
+    list[dict]
+        Raw records.
+    """
+    params = {"country": country}
+    resp = requests.get(f"{_BASE_URL}/analytics/country-data", params=params, timeout=15)
+    resp.raise_for_status()
+    return resp.json()
