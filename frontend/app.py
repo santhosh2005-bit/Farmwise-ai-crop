@@ -10,13 +10,10 @@ from __future__ import annotations
 # ─── Streamlit Cloud Directory Compatibility Hack ──────────────────
 import os
 import sys
-import types
 
-if "frontend" not in sys.modules:
-    _frontend_dir = os.path.dirname(os.path.abspath(__file__))
-    _frontend_module = types.ModuleType("frontend")
-    _frontend_module.__path__ = [_frontend_dir]
-    sys.modules["frontend"] = _frontend_module
+_repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if _repo_root not in sys.path:
+    sys.path.insert(0, _repo_root)
 
 import uuid
 
