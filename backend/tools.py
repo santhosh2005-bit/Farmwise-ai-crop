@@ -26,21 +26,28 @@ from backend.dataset import get_dataframe
 # ─── Tool function implementations ──────────────────────────
 
 
-def filter_by_country(country: str, year: int | None = None) -> list[dict[str, Any]]:
+def filter_by_country(country: str | None = None, year: int | None = None, name: str | None = None) -> list[dict[str, Any]]:
     """Filter the dataset for a specific country, optionally for a specific year.
 
     Parameters
     ----------
-    country : str
+    country : str | None
         Country name (case-insensitive match against the *Area* column).
     year : int | None
         Optional year filter.
+    name : str | None
+        Alternative parameter for country name.
 
     Returns
     -------
     list[dict]
         Filtered rows as records.
     """
+    if not country and name:
+        country = name
+    if not country:
+        return [{"error": "Country parameter is required."}]
+
     df: pd.DataFrame = get_dataframe()
     mask = df["Area"].str.lower() == country.strip().lower()
     if year is not None:
@@ -68,21 +75,28 @@ def filter_by_item(item: str) -> list[dict[str, Any]]:
     return result.to_dict(orient="records")
 
 
-def get_yield_trend(country: str, item: str | None = None) -> list[dict[str, Any]]:
+def get_yield_trend(country: str | None = None, item: str | None = None, name: str | None = None) -> list[dict[str, Any]]:
     """Return the year-over-year yield trend for a country (and optionally a crop).
 
     Parameters
     ----------
-    country : str
+    country : str | None
         Country name.
     item : str | None
         Optional crop name to narrow the trend.
+    name : str | None
+        Alternative parameter for country name.
 
     Returns
     -------
     list[dict]
         Yearly yield data as records, sorted by year.
     """
+    if not country and name:
+        country = name
+    if not country:
+        return [{"error": "Country parameter is required."}]
+
     df: pd.DataFrame = get_dataframe()
     mask = df["Area"].str.lower() == country.strip().lower()
 
@@ -505,9 +519,9 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                 "type": "object",
                 "properties": {
                     "country": {"type": "string", "description": "Country name e.g. 'India'"},
+                    "name": {"type": "string", "description": "Country name (alternative schema name)"},
                     "year": {"type": ["integer", "null"], "description": "Optional year e.g. 2013"},
                 },
-                "required": ["country"],
             },
         },
     },
@@ -534,9 +548,9 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                 "type": "object",
                 "properties": {
                     "country": {"type": "string", "description": "Country name"},
+                    "name": {"type": "string", "description": "Country name (alternative schema name)"},
                     "item": {"type": ["string", "null"], "description": "Optional crop name"},
                 },
-                "required": ["country"],
             },
         },
     },
