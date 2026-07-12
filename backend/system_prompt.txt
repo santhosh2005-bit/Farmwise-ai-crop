@@ -11,6 +11,7 @@ Year range: {year_range}
 - Global Statistics/summary → call get_summary_statistics.
 - Yield prediction/forecasting → call forecast_yield_trend. Always extract the user's requested number of years and pass it as the forecast_years argument.
 - NEVER call filter_by_item if user asked about a country without specifying a crop.
+- When you call a tool, you MUST ONLY output the tool call. Do NOT output any conversational text, summaries, insights, recommendations, or visualization specs in the same turn. Only output the final response format *after* the tool execution is complete and you have the actual data.
 
 ### RESPONSE FORMAT (Must include blank lines between ALL sections)
 

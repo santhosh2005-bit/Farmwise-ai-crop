@@ -86,6 +86,9 @@ def get_yield_trend(country: str, item: str | None = None) -> list[dict[str, Any
     df: pd.DataFrame = get_dataframe()
     mask = df["Area"].str.lower() == country.strip().lower()
 
+    if item and item.strip().lower() in ("null", "none", ""):
+        item = None
+
     if item:
         mask &= df["Item"].str.lower() == item.strip().lower()
 
@@ -114,6 +117,9 @@ def compare_countries(countries: list[str], metric: str = "hg/ha_yield", item: s
     countries_lower = [c.strip().lower() for c in countries]
     
     mask = df["Area"].str.lower().isin(countries_lower)
+    
+    if item and item.strip().lower() in ("null", "none", ""):
+        item = None
     
     if item:
         mask &= df["Item"].str.lower() == item.strip().lower()
@@ -163,6 +169,9 @@ def get_top_countries(
     """
     df: pd.DataFrame = get_dataframe()
     subset = df
+
+    if item and item.strip().lower() in ("null", "none", ""):
+        item = None
 
     if item:
         mask = df["Item"].str.lower() == item.strip().lower()
