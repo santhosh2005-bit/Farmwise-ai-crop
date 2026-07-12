@@ -76,8 +76,8 @@ def render_charts(charts_json: list[str]) -> None:
                 with cols[i]:
                     fig = pio.from_json(chart_json)
                     st.plotly_chart(fig, use_container_width=True)
-    except Exception:
-        st.warning("Could not render the chart(s).")
+    except Exception as e:
+        st.warning(f"Could not render the chart(s): {e}")
 
 
 def render_reasoning_steps(reasoning: list[dict[str, Any]]) -> None:
