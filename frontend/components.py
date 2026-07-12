@@ -869,7 +869,8 @@ def render_interactive_analytics(info: dict[str, Any]) -> None:
         try:
             from frontend.api import get_country_data
             all_crops_df = pd.DataFrame(get_country_data(country))
-        except Exception:
+        except Exception as e:
+            st.error(f"DEBUG: {e}")
             all_crops_df = pd.DataFrame()
 
         if all_crops_df.empty:
