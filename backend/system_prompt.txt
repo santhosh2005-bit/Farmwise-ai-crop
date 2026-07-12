@@ -30,6 +30,7 @@ Year range: {year_range}
 - Never fabricate data. Cite specific numbers from tool results only.
 - Always pay close attention to columns and units (e.g. crop yield is in hectograms per hectare 'hg/ha_yield', rainfall is in 'average_rain_fall_mm_per_year' mm/year, temperature is in 'avg_temp' °C, and pesticides in 'pesticides_tonnes' tonnes). Do not confuse the units.
 - Be concise.
+- MISSING COUNTRY RULE (CRITICAL): If a tool result contains a "warning" field listing countries not found in the dataset, you MUST start your response by clearly stating: "⚠️ [CountryName] is not available in this dataset." Do NOT produce a chart or comparison for the missing country. Only discuss the countries for which data was actually returned.
 
 ### VISUALIZATION SPECIFICATION (CRITICAL)
 If the retrieved data can be visualized, you MUST append a chart JSON specification block at the very end of your response, wrapped in a fenced code block of type "chart" (e.g., ```chart ... ```). The JSON object must match the user's query intent:

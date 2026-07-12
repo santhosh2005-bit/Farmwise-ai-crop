@@ -257,15 +257,27 @@ class Chatbot:
 
                     # Record tool result summary
                     row_count = 0
+                    warning_msg = None
                     if isinstance(result, list):
                         row_count = len(result)
+                        # compare_countries wraps result in [{"data": [...], "warning": ...}]
+                        if len(result) == 1 and isinstance(result[0], dict):
+                            if "data" in result[0]:
+                                row_count = len(result[0]["data"])
+                            if "warning" in result[0]:
+                                warning_msg = result[0]["warning"]
                     elif isinstance(result, dict) and "data" in result:
                         row_count = len(result["data"])
+                        if "warning" in result:
+                            warning_msg = result["warning"]
 
                     if row_count > 0:
                         summary = f"Successfully retrieved {row_count} data records."
                     else:
                         summary = "No matching data found for the given parameters."
+
+                    if warning_msg:
+                        summary += f" ⚠️ WARNING: {warning_msg}"
 
                     if isinstance(result, dict) and "error" in result:
                         summary = f"Error: {result['error']}"
@@ -286,6 +298,7 @@ class Chatbot:
                             if isinstance(result, list):
                                 if len(result) == 1 and isinstance(result[0], dict) and "data" in result[0]:
                                     # Copy to avoid modifying original inplace, truncate nested data
+                                    # IMPORTANT: always preserve the 'warning' key so the LLM knows about missing countries
                                     truncated_dict = result[0].copy()
                                     truncated_dict["data"] = truncated_dict["data"][:5]
                                     result_str = json.dumps([truncated_dict], default=str) + "\n...[truncated, showing 5 rows]"
@@ -294,6 +307,9 @@ class Chatbot:
                             elif isinstance(result, dict) and "data" in result:
                                 result_tmp = result.copy()
                                 result_tmp["data"] = result_tmp["data"][:5]
+                                # Always preserve the warning key
+                                if "warning" in result:
+                                    result_tmp["warning"] = result["warning"]
                                 result_str = json.dumps(result_tmp, default=str) + "\n...[truncated, showing 5 rows]"
                             else:
                                 result_str = result_str[:800] + "...[truncated]"
@@ -590,7 +606,14 @@ class Chatbot:
             }
             metric_label = label_map.get(metric, metric)
             
-            title = f"{item} {metric_label} Comparison Across Countries" if item else f"{metric_label} Comparison Across Countries"
+            # If only one country is actually present in data (other was missing from dataset),
+            # adjust the title to reflect this partial result
+            _df_check = pd.DataFrame(data)
+            available_countries = _df_check["Area"].unique().tolist() if "Area" in _df_check.columns else []
+            if len(available_countries) == 1:
+                title = f"{item} {metric_label} in {available_countries[0]} (Partial — other country not in dataset)" if item else f"{metric_label} in {available_countries[0]} (Partial — other country not in dataset)"
+            else:
+                title = f"{item} {metric_label} Comparison: {' vs '.join(available_countries)}" if item else f"{metric_label} Comparison: {' vs '.join(available_countries)}"
             
             spec = {
                 "chart_type": "line",
